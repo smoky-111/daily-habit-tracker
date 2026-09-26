@@ -49,11 +49,11 @@ input {
 }
 
 input:focus {
-  border-color: #2563eb;
+  border-color: #7c3aed;
 }
 
 button#add-btn {
-  background-color: #2563eb;
+  background-color: #7c3aed;
   color: white;
   border: none;
   padding: 10px 16px;
