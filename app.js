@@ -1,14 +1,60 @@
-// 1. Initialize Supabase Client
 const SUPABASE_URL = 'https://woasumnhugbwmjyfajcm.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_GIXQZaicGMEdXiPM2WL39g_XI_ymZn5';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 2. Select DOM Elements
+// DOM Elements
+const authContainer = document.getElementById('auth-container');
+const trackerContainer = document.getElementById('tracker-container');
+const authEmail = document.getElementById('auth-email');
+const authPassword = document.getElementById('auth-password');
+const loginBtn = document.getElementById('login-btn');
+const signupBtn = document.getElementById('signup-btn');
+const logoutBtn = document.getElementById('logout-btn');
 const habitInput = document.getElementById('habit-input');
 const addBtn = document.getElementById('add-btn');
 const habitList = document.getElementById('habit-list');
 
-// 3. Fetch habits from Supabase Database
+// --- AUTHENTICATION LISTENERS & STATE ---
+
+// Sign Up
+signupBtn.addEventListener('click', async () => {
+  const { error } = await supabaseClient.auth.signUp({
+    email: authEmail.value,
+    password: authPassword.value,
+  });
+  if (error) alert(error.message);
+  else alert('Account created! You can now log in.');
+});
+
+// Log In
+loginBtn.addEventListener('click', async () => {
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: authEmail.value,
+    password: authPassword.value,
+  });
+  if (error) alert(error.message);
+});
+
+// Log Out
+logoutBtn.addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+});
+
+// Monitor Auth Session
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    authContainer.style.display = 'none';
+    trackerContainer.style.display = 'block';
+    fetchHabits();
+  } else {
+    authContainer.style.display = 'block';
+    trackerContainer.style.display = 'none';
+    habitList.innerHTML = '';
+  }
+});
+
+// --- HABIT DATA OPERATIONS ---
+
 async function fetchHabits() {
   const { data: habits, error } = await supabaseClient
     .from('habits')
@@ -19,30 +65,24 @@ async function fetchHabits() {
     console.error('Error fetching habits:', error);
     return;
   }
-
   renderHabits(habits);
 }
 
-// 4. Render habits to DOM
 function renderHabits(habits) {
   habitList.innerHTML = '';
-
   habits.forEach((habit) => {
     const li = document.createElement('li');
     li.className = `habit-item ${habit.completed ? 'completed' : ''}`;
-
     li.innerHTML = `
       <span class="habit-name">${habit.title}</span>
       <button class="check-btn" onclick="toggleHabit(${habit.id}, ${habit.completed})">
         ${habit.completed ? 'Completed ✓' : 'Done'}
       </button>
     `;
-
     habitList.appendChild(li);
   });
 }
 
-// 5. Add a habit to Supabase
 async function addHabit() {
   const title = habitInput.value.trim();
   if (title === '') return;
@@ -57,10 +97,9 @@ async function addHabit() {
   }
 
   habitInput.value = '';
-  fetchHabits(); // Refresh list from database
+  fetchHabits();
 }
 
-// 6. Toggle habit completion state in Supabase
 async function toggleHabit(id, currentStatus) {
   const { error } = await supabaseClient
     .from('habits')
@@ -72,17 +111,10 @@ async function toggleHabit(id, currentStatus) {
     return;
   }
 
-  fetchHabits(); // Refresh list from database
+  fetchHabits();
 }
 
-// 7. Event Listeners
 addBtn.addEventListener('click', addHabit);
-
 habitInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    addHabit();
-  }
+  if (e.key === 'Enter') addHabit();
 });
-
-// Initial fetch on page load
-fetchHabits();

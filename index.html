@@ -11,17 +11,30 @@
   <div class="app-container">
     <header>
       <h1>Daily Habit Tracker</h1>
-      <p>Build consistency, one day at a time.</p>
+      <p id="subheading">Sign in to track your personal habits.</p>
     </header>
 
-    <!-- Input Controls -->
-    <div class="input-container">
-      <input type="text" id="habit-input" placeholder="Enter a new habit...">
-      <button id="add-btn">Add Habit</button>
+    <!-- Auth Form Container -->
+    <div id="auth-container">
+      <input type="email" id="auth-email" placeholder="Email address" required>
+      <input type="password" id="auth-password" placeholder="Password" required>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button id="login-btn" style="flex:1;">Log In</button>
+        <button id="signup-btn" style="flex:1; background:#10b981;">Sign Up</button>
+      </div>
     </div>
 
-    <ul id="habit-list">
-    </ul>
+    <!-- Habit Tracker Main UI (Hidden until logged in) -->
+    <div id="tracker-container" style="display: none;">
+      <div class="input-container">
+        <input type="text" id="habit-input" placeholder="Enter a new habit...">
+        <button id="add-btn">Add Habit</button>
+      </div>
+
+      <ul id="habit-list"></ul>
+      
+      <button id="logout-btn" style="background:#ef4444; width:100%; margin-top:15px;">Log Out</button>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
