@@ -1,58 +1,88 @@
-// 1. Select DOM Elements
+// 1. Initialize Supabase Client
+const SUPABASE_URL = 'https://woasumnhugbwmjyfajcm.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GIXQZaicGMEdXiPM2WL39g_XI_ymZn5';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2. Select DOM Elements
 const habitInput = document.getElementById('habit-input');
 const addBtn = document.getElementById('add-btn');
 const habitList = document.getElementById('habit-list');
 
-// 2. Retrieve saved habits from Local Storage (or start with an empty array)
-let habits = JSON.parse(localStorage.getItem('habits')) || [];
+// 3. Fetch habits from Supabase Database
+async function fetchHabits() {
+  const { data: habits, error } = await supabaseClient
+    .from('habits')
+    .select('*')
+    .order('id', { ascending: true });
 
-// 3. Render habits dynamically to the page
-function renderHabits() {
-  habitList.innerHTML = ''; // Clear existing DOM items before re-rendering
+  if (error) {
+    console.error('Error fetching habits:', error);
+    return;
+  }
 
-  habits.forEach((habit, index) => {
+  renderHabits(habits);
+}
+
+// 4. Render habits to DOM
+function renderHabits(habits) {
+  habitList.innerHTML = '';
+
+  habits.forEach((habit) => {
     const li = document.createElement('li');
     li.className = `habit-item ${habit.completed ? 'completed' : ''}`;
 
     li.innerHTML = `
-      <span class="habit-name">${habit.text}</span>
-      <button class="check-btn" onclick="toggleHabit(${index})">
+      <span class="habit-name">${habit.title}</span>
+      <button class="check-btn" onclick="toggleHabit(${habit.id}, ${habit.completed})">
         ${habit.completed ? 'Completed ✓' : 'Done'}
       </button>
     `;
 
     habitList.appendChild(li);
   });
-
-  // Save the current state of habits into the browser's storage
-  localStorage.setItem('habits', JSON.stringify(habits));
 }
 
-// 4. Function to add a new habit
-function addHabit() {
-  const text = habitInput.value.trim();
-  if (text === '') return; // Don't add empty items
+// 5. Add a habit to Supabase
+async function addHabit() {
+  const title = habitInput.value.trim();
+  if (title === '') return;
 
-  habits.push({ text: text, completed: false });
-  habitInput.value = ''; // Clear input field
-  renderHabits();
+  const { error } = await supabaseClient
+    .from('habits')
+    .insert([{ title: title, completed: false }]);
+
+  if (error) {
+    console.error('Error adding habit:', error);
+    return;
+  }
+
+  habitInput.value = '';
+  fetchHabits(); // Refresh list from database
 }
 
-// 5. Function to toggle habit completion status
-function toggleHabit(index) {
-  habits[index].completed = !habits[index].completed;
-  renderHabits();
+// 6. Toggle habit completion state in Supabase
+async function toggleHabit(id, currentStatus) {
+  const { error } = await supabaseClient
+    .from('habits')
+    .update({ completed: !currentStatus })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating habit:', error);
+    return;
+  }
+
+  fetchHabits(); // Refresh list from database
 }
 
-// 6. Event Listeners
+// 7. Event Listeners
 addBtn.addEventListener('click', addHabit);
 
-// Allow pressing 'Enter' key to add a habit
 habitInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     addHabit();
   }
 });
 
-// Initial render when the page loads
-renderHabits();
+// Initial fetch on page load
+fetchHabits();
